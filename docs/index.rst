@@ -10,7 +10,7 @@ Welcome to PET data analysis's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   source/find_tx_asic.rst
+   source/functionbox.rst
 
 
 Indices and tables
