@@ -55,6 +55,12 @@ T_SINGLE_EVENT_PIXELATED = np.dtype([
   ])
 
 def find_tx_asic(infile):
+    """
+    This function find tx and asic in the acquisition file
+
+    Parameters:
+        - infile = name of the acquisition file
+    """
     found_tx = list(map(int,np.unique(infile['tx_id'])))
     found_ic = list(map(int,np.unique(infile['asic_id'])))
     assert(np.in1d(found_tx,np.arange(18)).all())
