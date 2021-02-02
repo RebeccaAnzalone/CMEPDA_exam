@@ -1,10 +1,10 @@
-find_tx_asic module
+functionbox module
 ===================
 
-find_tx_asic
-----
+functionbox
+-----------
 
-.. automodule:: find_tx_asic
+.. automodule:: functionbox
    :members:
    :undoc-members:
    :show-inheritance:
