@@ -1,7 +1,7 @@
 API documentation
 =================
 
-functionbox
+find_tx_asic
 ----
-.. automodule:: functionbox
+.. automodule:: find_tx_asic
    :members:
