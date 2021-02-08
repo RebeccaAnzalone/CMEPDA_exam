@@ -18,7 +18,7 @@ import os
 import sys
 #package_root = os.path.abspath('..')
 #sys.path.insert(0, package_root)
-sys.path.insert(0, os.path.abspath('/home/rebecca/COMPUTING/CMEPDA_exam'))
+sys.path.insert(0, os.path.abspath('..'))
 
 
 
