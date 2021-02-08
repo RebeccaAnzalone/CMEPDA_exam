@@ -10,7 +10,7 @@ Welcome to PET data analysis's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   source/functionbox.rst
+   functionbox
 
 
 Indices and tables
