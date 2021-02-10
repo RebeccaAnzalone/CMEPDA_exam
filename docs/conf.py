@@ -14,11 +14,18 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import os
-import sys
+#import os
+#import sys
 #package_root = os.path.abspath('..')
 #sys.path.insert(0, package_root)
-sys.path.insert(0, os.path.abspath('..'))
+#sys.path.insert(0, os.path.abspath('..'))
+
+import os
+import sys
+package_name = 'CMEPDA_exam'
+package_root = os.path.abspath('..')
+sys.path.insert(0, package_root)
+sys.path.insert(0, os.path.join(package_root, package_name))
 
 
 
@@ -32,9 +39,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'CMEPDA_exam'
-copyright = '2021, Rebecca Anzalone'
-author = 'Rebecca Anzalone'
+project = package_name
+copyright = u'2021, Rebecca Anzalone'
+author = u'Rebecca Anzalone'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
