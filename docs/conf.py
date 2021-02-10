@@ -32,7 +32,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'PET-data-analysis'
+project = 'CMEPDA_exam'
 copyright = '2021, Rebecca Anzalone'
 author = 'Rebecca Anzalone'
 

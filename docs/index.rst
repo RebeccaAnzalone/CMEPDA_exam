@@ -6,11 +6,14 @@
 Welcome to PET data analysis's documentation!
 =============================================
 
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   api
 
-   functionbox
 
 
 Indices and tables

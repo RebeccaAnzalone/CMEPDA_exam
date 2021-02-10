@@ -1,4 +1,6 @@
 API
 ===
-.. automodule:: CMEPDA_exam.functionbox
+.. automodule:: functionbox
     :members:
+    :undoc-members:
+    :show-inheritance:
