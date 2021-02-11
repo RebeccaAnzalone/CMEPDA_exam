@@ -4,7 +4,7 @@
 # See this stackoverflow question
 # http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
 # for the magic in this command
-SETUP_DIR="$( cd "$( CMEPDA_exam "${BASH_SOURCE[0]}" )" && pwd )"
+SETUP_DIR="$( cd "$( /home/rebecca/COMPUTING/CMEPDA_exam/ "${BASH_SOURCE[0]}" )" && pwd )"
 
 #
 # Base package root. All the other releavant folders are relative to this
