@@ -1,5 +1,5 @@
-API
-===
+Function box
+============
 .. automodule:: functionbox
     :members:
     :undoc-members:
