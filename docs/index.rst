@@ -12,7 +12,7 @@ Welcome to PET data analysis' documentation!
    :maxdepth: 2
    :caption: Contents:
    
-   api
+   
    
    
 
