@@ -367,31 +367,30 @@ def hist_energy(array_temporaneo,pixel_ids,sel_tx,sel_ic):
         """
     return arr
 
-def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration, crystals,CW,i):
+def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration, crystals,CW):
     arr = np.zeros((18,12,113,200))
-    #with open ('temp.dat', 'wb+') as f:
-    for sel_tx_i, sel_tx in enumerate(found_tx):
-        tx_ids = infile['tx_id']==sel_tx
-        for sel_ic_i, sel_ic in enumerate(found_ic):
-                with open ('temp_{}_{}_{}.dat'.format(sel_tx,sel_ic,i), 'wb+') as f:
-                    tx_ic_ids = np.logical_and(tx_ids,infile['asic_id']==sel_ic)
-                    array_t = calculate_timestamps(infile[tx_ic_ids],sel_tx,sel_ic, tdc_calibration)
-                    array_e = (infile[tx_ic_ids]['energy']  - pedestal['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)])
-                    array_2t = choose_timestamp(False, array_t, array_e)
-                    lut = np.array(crystals['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]['lut'])
-                    pixel_ids, bot_idx, top_idx = get_pixel(array_e,lut)
-                    array_charge = np.ma.masked_less_equal(array_e,0).sum(axis=1)
-                    array_temporaneo = np.zeros(dtype = T_SINGLE_EVENT_PIXELATED, shape =array_charge.size)
-                    array_temporaneo['tx_id'] = sel_tx
-                    array_temporaneo['asic_id'] = sel_ic
-                    array_temporaneo['timestamp'] = array_2t
-                    array_temporaneo['energy'] = array_charge
-                    array_temporaneo['pixel_id'] = pixel_ids
-                    array_temporaneo.tofile(f)
-                    arr += hist_energy(array_temporaneo,pixel_ids,sel_tx,sel_ic)
+    with open ('temp.dat', 'wb+') as f:
+        for sel_tx_i, sel_tx in enumerate(found_tx):
+            tx_ids = infile['tx_id']==sel_tx
+            for sel_ic_i, sel_ic in enumerate(found_ic):
+                tx_ic_ids = np.logical_and(tx_ids,infile['asic_id']==sel_ic)
+                array_t = calculate_timestamps(infile[tx_ic_ids],sel_tx,sel_ic, tdc_calibration)
+                array_e = (infile[tx_ic_ids]['energy']  - pedestal['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)])
+                array_2t = choose_timestamp(False, array_t, array_e)
+                lut = np.array(crystals['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]['lut'])
+                pixel_ids, bot_idx, top_idx = get_pixel(array_e,lut)
+                array_charge = np.ma.masked_less_equal(array_e,0).sum(axis=1)
+                array_temporaneo = np.zeros(dtype = T_SINGLE_EVENT_PIXELATED, shape =array_charge.size)
+                array_temporaneo['tx_id'] = sel_tx
+                array_temporaneo['asic_id'] = sel_ic
+                array_temporaneo['timestamp'] = array_2t
+                array_temporaneo['energy'] = array_charge
+                array_temporaneo['pixel_id'] = pixel_ids
+                array_temporaneo.tofile(f)
+                arr += hist_energy(array_temporaneo,pixel_ids,sel_tx,sel_ic)
 
 
-    fn = np.fromfile('temp_{}_{}_{}.dat'.format(sel_tx,sel_ic,i),dtype=T_SINGLE_EVENT_PIXELATED)
+    fn = np.fromfile('temp.dat',dtype=T_SINGLE_EVENT_PIXELATED)
     fn.sort(order = 'timestamp')
     plt.figure()
     #plt.title('Events in TX {} ASIC {}'.format(sel_tx,sel_ic))

@@ -106,7 +106,7 @@ def main_timestamp(input_file_name,count, crystal_map_filename,pedestals_filenam
             infile = np.fromfile(input_file_name,dtype=fun.T_ASIC_TEMP_EVENT,count=int(count),offset=((fun.T_ASIC_TEMP_EVENT.itemsize)*i*int(count)))
             found_tx,found_ic=fun.find_tx_asic(infile)
 
-            coincidences,arr_energy = fun.compute_events(infile,found_tx,found_ic,data0,data1,data2, CW, i)
+            coincidences,arr_energy = fun.compute_events(infile,found_tx,found_ic,data0,data1,data2, CW)
             print('numero di coincidenze', int(np.shape(coincidences)[0]/2),'-------->', np.shape(coincidences)[0]/(int(count)/2))
             lista.append(np.shape(coincidences)[0]/(int(count)/2))
             arr_risoluzione_energetica += arr_energy
