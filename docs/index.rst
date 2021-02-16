@@ -8,12 +8,9 @@ Welcome to PET data analysis' documentation!
 
 
 
-.. toctree::
+.. toctree:: api
    :maxdepth: 2
    :caption: Contents:
-   
-   
-   
    
 
 
