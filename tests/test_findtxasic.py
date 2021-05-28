@@ -9,12 +9,7 @@ from functionbox import T_ASIC_TEMP_EVENT
 #import CMEPDA_exam.functionbox as fun
 #from functionbox import find_tx_asic
 
-infile=np.fromfile('file.dat.dec',dtype=T_ASIC_TEMP_EVENT)
-
-with open('file_test.dat.dec','wb+') as f:
-    test=infile[:15]
-    test.tofile(f)
-
+infile=np.fromfile('file_test.dat.dec',dtype=T_ASIC_TEMP_EVENT)
 
 found_tx,found_ic = find_tx_asic(infile)
 
