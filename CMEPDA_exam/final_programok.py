@@ -19,6 +19,9 @@ import time
 import multiprocessing as mp
 from multiprocessing import Process
 
+import line_profiler
+profile = line_profiler.LineProfiler()
+
 @profile
 def pedestal_and_tdc(input_file_name,count,pedestals_filename,tdc_filename):
 
@@ -149,41 +152,45 @@ if __name__ == "__main__":
     parser.add_argument('-CTR','--coincidence_time_resolution', help='compute and show histogram of time differences', default = True)
     parser.add_argument('-spectrum', '--plot_pixel_spectra', help='this is a list where the first element is True/False and the remains stand for [[TX], [ASIC]]', default = [False,[12,13],[8,9,10]])
     parser.add_argument('-ew','--energy_window', help='this is a list where the first element is True/False and the remains stand for [energy_min, energy_max]', default = [False, 350,650])
-
+    parser.add_argument('-mp','--multiprocessing',help='activate multiprocessing to compute "pedestal_and_tdc" function',default=False)
 
 
     args=parser.parse_args()
-    #pedestals(args.input_file,args.count_events,args.pedestals_filename)
-    #tdc(args.input_file,args.count_events,args.tdc_calibration_filename)
 
-    pedestal_and_tdc(args.input_file,args.count_events,args.pedestals_filename,args.tdc_calibration_filename)
-    crystal_map(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename, args.show_floodmap_LUT)
 
-    start = time.perf_counter()
+    if args.multiprocessing:
+        start = time.perf_counter()
+
+        processes=[]
+        for _ in range(4):
+            p = mp.Process(target=pedestal_and_tdc, args=[args.input_file,args.count_events,args.pedestals_filename,args.tdc_calibration_filename])
+            p.start()
+            processes.append(p)
+
+        for process in processes:
+            process.join()
+
+        finish = time.perf_counter()
+        print(f'Finished in {round(finish-start, 2)} seconds')
+
+    else:
+         pedestal_and_tdc(args.input_file,args.count_events,args.pedestals_filename,args.tdc_calibration_filename)
+
+
 
     """
-    processes=[]
-    for _ in range(4):
-        p = mp.Process(target=main_timestamp, args=[args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_filename])
-        p.start()
-        processes.append(p)
-
-    for p in processes:
-        p.join()
-
     coincidences_file,spectrum_array = [output.get() for p in processes]
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         coincidences_file,spectrum_array = executor.submit(main_timestamp,args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_filename)
-    """
+
 
     pool = mp.Pool(mp.cpu_count())
     coincidences_file,spectrum_array = pool.map(main_timestamp(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_filename), args.input_file)
+    """
 
-    #coincidences_file,spectrum_array = main_timestamp(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_filename)
-
-    finish = time.perf_counter()
-    print(f'Finished in {round(finish-start, 2)} seconds')
+    crystal_map(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename, args.show_floodmap_LUT)
+    coincidences_file,spectrum_array = main_timestamp(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_filename)
 
     if args.coincidence_time_resolution:
         fun.find_CTR(coincidences_file,args.count_events, args.energy_window)
