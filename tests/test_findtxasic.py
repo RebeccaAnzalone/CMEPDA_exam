@@ -9,7 +9,8 @@ import numpy as np
 #import CMEPDA_exam.functionbox as fun
 from CMEPDA_exam.functionbox import find_tx_asic, T_ASIC_TEMP_EVENT
 
-infile=np.fromfile('file_test.dat.dec',dtype=T_ASIC_TEMP_EVENT)
+filepath=os.path.join(os.path.dirname(__file__),'file_test.dat.dec')
+infile=np.fromfile(filepath,dtype=T_ASIC_TEMP_EVENT)
 
 found_tx,found_ic = find_tx_asic(infile)
 
