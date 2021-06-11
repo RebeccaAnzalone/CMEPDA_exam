@@ -4,9 +4,9 @@ import sys
 
 import numpy as np
 #import CMEPDA_exam
-from functionbox import find_peak
+#from functionbox import find_peak
 #import CMEPDA_exam.functionbox as fun
-#from functionbox import find_tx_asic
+from CMEPDA_exam.functionbox import find_peak
 
 array_test=np.array([0.68301077, 0.38026148, 0.89694527, 0.68396937, 0.3465238 ,
        0.02004013, 0.02979222, 0.66854284, 0.8614734 , 0.29419134,

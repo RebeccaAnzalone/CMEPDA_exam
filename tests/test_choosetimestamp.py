@@ -4,7 +4,7 @@ import sys
 
 import numpy as np
 #import CMEPDA_exam
-from functionbox import choose_timestamp
+from CMEPDA_exam.functionbox import choose_timestamp
 #import CMEPDA_exam.functionbox as fun
 #from functionbox import find_tx_asic
 

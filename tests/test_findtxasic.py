@@ -4,10 +4,10 @@ import sys
 
 import numpy as np
 #import CMEPDA_exam
-from functionbox import find_tx_asic
-from functionbox import T_ASIC_TEMP_EVENT
-#import CMEPDA_exam.functionbox as fun
 #from functionbox import find_tx_asic
+#from functionbox import T_ASIC_TEMP_EVENT
+#import CMEPDA_exam.functionbox as fun
+from CMEPDA_exam.functionbox import find_tx_asic, T_ASIC_TEMP_EVENT
 
 infile=np.fromfile('file_test.dat.dec',dtype=T_ASIC_TEMP_EVENT)
 
