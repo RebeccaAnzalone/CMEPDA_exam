@@ -4,3 +4,4 @@ sklearn
 plotly
 scipy
 scikit-image
+line_profiler
