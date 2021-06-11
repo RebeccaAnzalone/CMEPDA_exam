@@ -3,4 +3,4 @@ matplotlib
 sklearn
 plotly
 scipy
-skimage
+scikit-image
