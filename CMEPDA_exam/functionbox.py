@@ -24,11 +24,17 @@ profile = line_profiler.LineProfiler()
 
 logging.basicConfig(level=logging.INFO)
 
+N_TX = 18
+N_ASIC = 12
+PEDESTAL_BINS = 99
+TDC_BINS = 1024
 T_ASIC_CHANNELS = 64
 TDC_CALIBRATED_BITS = 14
 TOP_BITS = 16
 COARSE_BITS = 10
 TDC_UNIT_NS = 25 / 16384 #ns
+
+FLOODMAP_SIZE = 200
 
 T_ASIC_TEMP_EVENT = np.dtype([
     ('tx_id'     , np.uint8),
@@ -84,8 +90,8 @@ def find_tx_asic(infile):
     """
     found_tx = list(map(int,np.unique(infile['tx_id'])))
     found_ic = list(map(int,np.unique(infile['asic_id'])))
-    assert(np.in1d(found_tx,np.arange(18)).all())
-    assert(np.in1d(found_ic,np.arange(12)).all())
+    assert(np.in1d(found_tx,np.arange(N_TX)).all())
+    assert(np.in1d(found_ic,np.arange(N_ASIC)).all())
     logging.info('eventi trovati : {}'.format(infile.size))
     logging.info('TX trovate     : {}'.format(found_tx))
     logging.info('ASIC trovati   : {}'.format(found_ic))
@@ -111,7 +117,7 @@ def hist_pedestals(infile,found_tx,found_ic):
     arr : numpy.array
           array with energy values for every pixel
     """
-    arr=np.zeros((18,12,64,99)) #tx,asic,channels,bins
+    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,PEDESTAL_BINS)) #tx,asic,channels,bins
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
@@ -140,14 +146,14 @@ def hist_tdc(infile,found_tx,found_ic):
     arr : numpy.array
           array with fine time values for every pixel
     """
-    arr=np.zeros((18,12,64,1024)) #tx,asic,channels,bins
+    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,TDC_BINS)) #tx,asic,channels,bins
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
             a = infile[np.logical_and(tx_ids,infile['asic_id']==sel_ic)]
             fine=a['fine']
             for i in range(0,T_ASIC_CHANNELS): #loop sui canali
-                n,b=np.histogram(fine[:,i],bins=np.arange(4.5,1024.5))
+                n,b=np.histogram(fine[:,i],bins=np.arange(4.5,TDC_BINS+0.5))
                 arr[sel_tx,sel_ic,i,5:]=n
     return arr
 
@@ -168,7 +174,7 @@ def find_pedestals(arr,found_tx,found_ic,pedestals_filename):
                          output file containing pedestal values
     Returns
     -------
-    None
+    None : None
     """
     pedestals_dict={}
     #found_tx=np.nonzero(np.unique(arr[:,0]))[0]
@@ -176,7 +182,7 @@ def find_pedestals(arr,found_tx,found_ic,pedestals_filename):
     for sel_tx_i,sel_tx in enumerate(found_tx):
         pedestals_dict['TX_{}'.format(sel_tx)]={}
         for sel_ic_i,sel_ic in enumerate(found_ic):
-            pedestals_dict['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]=pedestals = [0]*(64)
+            pedestals_dict['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]=pedestals = [0]*(T_ASIC_CHANNELS)
             for i in range(0,T_ASIC_CHANNELS):
                 max=np.where(arr[sel_tx,sel_ic,i,:]==arr[sel_tx,sel_ic,i,:].max())
                 pedestals[i]=int(max[0][0]) +1
@@ -225,7 +231,6 @@ def find_tdc_range_to_correct(finetime,xdata,pixel):
 def find_tdc(arr,found_tx,found_ic,tdc_filename):
     """
     Function that calculate and apply the calibration of fine time values for every pixel and write a json file with the results.
-    Questa funzione segnala particolari anomalie nello spettro
 
     Parameters
     ----------
@@ -239,7 +244,7 @@ def find_tdc(arr,found_tx,found_ic,tdc_filename):
                    output file containing calibrated fine time values
     Returns
     -------
-    None
+    None : None
     """
     tdc_dict={}
     #found_tx=np.nonzero(np.unique(arr[:,0]))[0]
@@ -247,10 +252,10 @@ def find_tdc(arr,found_tx,found_ic,tdc_filename):
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tdc_dict['TX_{}'.format(sel_tx)]={}
         for sel_ic_i,sel_ic in enumerate(found_ic):
-            t_cal = np.zeros((64,1024),dtype=np.int16)-1
+            t_cal = np.zeros((T_ASIC_CHANNELS,TDC_BINS),dtype=np.int16)-1
             count = 0
-            for i in range(0,64):
-                xdata = np.arange(4.5,1024.5)
+            for i in range(0,T_ASIC_CHANNELS):
+                xdata = np.arange(4.5,TDC_BINS+0.5)
                 xdata = 0.5*(xdata[1:]-xdata[:-1])
                 try:
                     range_corrected, mean = find_tdc_range_to_correct(arr[sel_tx,sel_ic,i,:],xdata,i)
@@ -258,17 +263,14 @@ def find_tdc(arr,found_tx,found_ic,tdc_filename):
                         h[range_corrected[0]:range_corrected[1]] = mean
                 except:
                     pass
-                events = arr[sel_tx,sel_ic,i,990:]
-                if events.all() > 0.00025:
-                    count +=1
 
-                N_ideal_bin= sum(arr[sel_tx,sel_ic,i,:])/1019
+                events = arr[sel_tx,sel_ic,i,990:]
+
+                N_ideal_bin= sum(arr[sel_tx,sel_ic,i,:])/(TDC_BINS-5)
                 calibration = ( 2**(TDC_CALIBRATED_BITS-10) * arr[sel_tx,sel_ic,i,5:]/N_ideal_bin)
-                t_cal[i,5:] = ( calibration.cumsum() * (1024/1019) *  ( (2**TDC_CALIBRATED_BITS-1) /2**TDC_CALIBRATED_BITS) ).astype(np.int16)
+                t_cal[i,5:] = ( calibration.cumsum() * (TDC_BINS/(TDC_BINS-5)) *  ( (2**TDC_CALIBRATED_BITS-1) /2**TDC_CALIBRATED_BITS) ).astype(np.int16)
                 tdc_dict['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)] = t_cal.tolist()
-            print('tx = {}, asic = {}, wrong channels = {} !'.format(sel_tx,sel_ic,count))
-            if count >5:
-                print('---Error!---')
+
     json.dump(tdc_dict,open(tdc_filename,'w'),indent=4)
 
 @profile
@@ -295,7 +297,7 @@ def floodmap(infile, found_tx, found_ic, data0):
     event_y : int
               coordinate of the centroid along the y axes
     """
-    floodmap_array = np.zeros((18,12,200,200))
+    floodmap_array = np.zeros((N_TX,N_ASIC,FLOODMAP_SIZE,FLOODMAP_SIZE))
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
@@ -328,7 +330,7 @@ def generate_maps(fmap_val,lista_cry):
     #print(local_maxi)
     #markers = ndi.label(local_maxi)[0]
     #print(markers)
-    lut = watershed(-blobs_log, 64,watershed_line=False)
+    lut = watershed(-blobs_log,T_ASIC_CHANNELS,watershed_line=False)
     #print(np.unique(lut,return_counts=True))
     #print(len(labels))
     #print(lut)
@@ -447,8 +449,8 @@ def calculate_timestamps(infile,sel_tx,sel_ic, tdc_calibration):
     ttop[tbc] -= 1
     tfine  = tfine.astype(np.int64)
     channel_timestamps = (
-            np.broadcast_to((tglobal << (TDC_CALIBRATED_BITS + COARSE_BITS + TOP_BITS)),    (64,tglobal.size)).T +
-            np.broadcast_to((ttop    << (TDC_CALIBRATED_BITS + COARSE_BITS)),                  (64,ttop.size)).T +
+            np.broadcast_to((tglobal << (TDC_CALIBRATED_BITS + COARSE_BITS + TOP_BITS)),    (T_ASIC_CHANNELS,tglobal.size)).T +
+            np.broadcast_to((ttop    << (TDC_CALIBRATED_BITS + COARSE_BITS)),                  (T_ASIC_CHANNELS,ttop.size)).T +
             (tcoarse << TDC_CALIBRATED_BITS) -
             tfine
         )
@@ -548,7 +550,7 @@ def hist_energy(array_temporaneo,pixel_ids,sel_tx,sel_ic):
     arr : numpy.array
           array with energy values for every pixel
     """
-    arr = np.zeros((18,12,113,200))
+    arr = np.zeros((N_TX,N_ASIC,113,200))
     found_pixel = list(map(int,np.unique(pixel_ids)))
 
     for sel_pixel_i, sel_pixel in enumerate(found_pixel):
@@ -586,7 +588,7 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
     arr : numpy.array
           output of the 'hist_energy' function applied to the timestamped events
     """
-    arr = np.zeros((18,12,113,200))
+    arr = np.zeros((N_TX,N_ASIC,113,200))
     with open ('temp.dat', 'wb+') as f:
         for sel_tx_i, sel_tx in enumerate(found_tx):
             tx_ids = infile['tx_id']==sel_tx
@@ -657,9 +659,9 @@ def find_energy_calibration(found_tx, found_ic,arr_calibrazione_energetica,effic
                             json file containing energy calibration coefficients (or efficiencies)
     Returns
     -------
-    None
+    None : None
     """
-    # arr_risoluzione_energetica = np.zeros((18,12,113,200))
+    # arr_risoluzione_energetica = np.zeros((N_TX,12,113,200))
     efficiencies_dict = {}
     for sel_tx_i, sel_tx in enumerate(found_tx):
         efficiencies_dict['TX_{}'.format(sel_tx)] = {}
@@ -703,20 +705,17 @@ def apply_energy_calibration(infile,energy_cal, found_tx, found_ic):
     arr : numpy.array
           array containing all the calibrated energy values for every pixel
     """
-    arr = np.zeros((18,12,113,200))
+    arr = np.zeros((N_TX,N_ASIC,113,200))
     for sel_tx_i, sel_tx in enumerate(found_tx):
             tx_ids = infile['tx_id']==sel_tx
             for sel_ic_i, sel_ic in enumerate(found_ic):
-                if (sel_tx == 12 and sel_ic == 11):
-                    continue
-                else:
-                    tx_ic_ids = np.logical_and(tx_ids,infile['asic_id']==sel_ic)
-                    #print(len(tx_ic_ids))
-                    for pixid, efficiency in enumerate(energy_cal['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]):
-                        sel = np.logical_and(tx_ic_ids,infile['pixel_id']==pixid)
-                        infile['energy'][sel] = infile['energy'][sel] * efficiency
-                        n,b = np.histogram(infile['energy'][sel],bins=np.linspace(0,1000,201))
-                        arr[sel_tx,sel_ic,pixid,:] += n
+                tx_ic_ids = np.logical_and(tx_ids,infile['asic_id']==sel_ic)
+                #print(len(tx_ic_ids))
+                for pixid, efficiency in enumerate(energy_cal['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]):
+                    sel = np.logical_and(tx_ic_ids,infile['pixel_id']==pixid)
+                    infile['energy'][sel] = infile['energy'][sel] * efficiency
+                    n,b = np.histogram(infile['energy'][sel],bins=np.linspace(0,1000,201))
+                    arr[sel_tx,sel_ic,pixid,:] += n
     return arr
 
 @profile
@@ -725,21 +724,6 @@ def f(x, C, mu, sigma):
     f is the Gaussian function
     """
     return C*norm.pdf(x, mu, sigma)
-
-@profile
-def kn(x):
-    E=511   #energia del gamma incidente
-    ct = 1 - (511 / E) * (E/x -1)
-    r = 2.81*10**(-13)    #cm
-    a =r*r*((1 + ct**2) / 2)
-    b = 1/((1 + E *(1 - ct))**2)
-    c =1 + ((E**2*(1-ct)**2) / ( (1 + ct**2)*(1 + E*(1-ct)) ) )
-    sigma=a*b+c
-    return sigma
-
-@profile
-def fitfinale(x, C, mu, sigma, A): #aggiunge Klein-Nishina
-    return C * norm.pdf(x, mu, sigma) + A*kn(x)
 
 @profile
 def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
@@ -751,16 +735,6 @@ def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
     """
 
 
-    risoluzione_en = 2.35*(popt[2])/popt[1]
-
-    u_R= 2.35*np.sqrt(((np.sqrt(np.diag(pcov)[2]))/popt[1])**2 + (popt[2]*(np.sqrt(np.diag(pcov)[1]))/(popt[1]**2))**2)
-
-    return risoluzione_en, u_R
-
-@profile
-def fit_function_spectrum(spectrum, xdata): #con Klein-Nishina (il fit lo fa con 'fitfinale')
-    xdata_mask = np.logical_and(xdata<650 , xdata>350)
-    popt, pcov = curve_fit(fitfinale, xdata[xdata_mask], spectrum[xdata_mask], p0=[15000,511,50, 100])
     risoluzione_en = 2.35*(popt[2])/popt[1]
 
     u_R= 2.35*np.sqrt(((np.sqrt(np.diag(pcov)[2]))/popt[1])**2 + (popt[2]*(np.sqrt(np.diag(pcov)[1]))/(popt[1]**2))**2)
@@ -782,7 +756,7 @@ def find_CTR(file_coincidenze,count,lista_energia):
                     energy window: list where the first element is True/False and the remains stand for [energy_min, energy_max]
     Returns
     -------
-    None
+    None : None
     """
     i, j = 0, 314
     array_CTR=np.zeros((120))
@@ -828,16 +802,12 @@ def plot_spectrum(array_energia,tx,asic):
            asic identification number+
     Returns
     -------
-    None
+    None : None
     """
     x =np.linspace(0,1000,200)
     for sel_tx in tx:
         for sel_ic in asic:
-            #if sel_ic == 12:
-            n_pixel = 64
-            #else:
-            #    n_pixel = 113
-            for pixel in range(0,n_pixel):
+            for pixel in range(0,T_ASIC_CHANNELS):
                 plt.figure()
                 plt.title('Spettro energetico TX = {}, ASIC = {}, Pixel = {}'.format(sel_tx,sel_ic,pixel))
                 plt.xlabel('energy [keV]')
@@ -855,7 +825,7 @@ def find_energy_resolution(arr_risoluzione_energetica):
                                  array containing all the energy values
     Returns
     -------
-    None
+    None : None
     """
     x = np.linspace(0,1000,200)
 
