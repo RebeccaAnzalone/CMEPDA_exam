@@ -6,11 +6,13 @@
 Welcome to PET data analysis' documentation!
 ============================================
 
-
-
-.. toctree:: api
+.. toctree:: 
    :maxdepth: 2
    :caption: Contents:
+   
+   modules
+   api
+   PET_analyser
    
 
 
