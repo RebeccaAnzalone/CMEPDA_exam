@@ -3,5 +3,5 @@ PET data analysis
 .. toctree::
    :maxdepth: 4
 
-   api
+   functionbox
    PET_analyser

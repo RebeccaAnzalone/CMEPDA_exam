@@ -11,7 +11,7 @@ Welcome to PET data analysis' documentation!
    :caption: Contents:
    
    modules
-   api
+   functionbox
    PET_analyser
    
 
