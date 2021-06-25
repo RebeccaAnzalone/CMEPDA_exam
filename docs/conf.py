@@ -17,7 +17,7 @@
 import os
 import sys
 package_name = 'PET data analysis'
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../CMEPDA_exam/'))
 #package_root = os.path.abspath('..')
 #sys.path.insert(0, package_root)
 #sys.path.insert(0, os.path.join(package_root, package_name))
@@ -45,7 +45,7 @@ author = u'Rebecca Anzalone'
 
 
 # The short X.Y version
-from CMEPDA_exam.version import __version__
+from version import __version__
 version = __version__
 # The full version, including alpha/beta/rc tags
 release = __version__
