@@ -4,7 +4,8 @@ import numpy as np
 import functionbox as fun
 from pylab import subplots, hist, plot, Circle, cm
 from skimage.feature import blob_log
-from skimage.morphology import watershed
+#from skimage.morphology import watershed
+from skimage.segmentation import watershed
 from scipy.optimize import curve_fit
 from scipy import signal
 from scipy.stats import norm
