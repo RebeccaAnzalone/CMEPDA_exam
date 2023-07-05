@@ -43,7 +43,7 @@ def pedestal_and_tdc(input_file_name,count,pedestals_filename,tdc_filename):
     """
 
     i, j = 0, 314
-    pedestal_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.PEDESTAL_BINS)) #tx,asic,channels,bins
+    pedestal_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.PEDESTAL_BINS-1)) #tx,asic,channels,bins
     tdc_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.TDC_BINS)) #tx,asic,channels,bins
     while (i >=0 and j >0):
         infile = np.fromfile(input_file_name,dtype=fun.T_ASIC_TEMP_EVENT,count=int(count),offset=((fun.T_ASIC_TEMP_EVENT.itemsize)*i*int(count)))
@@ -100,8 +100,8 @@ def main_timestamp(input_file_name,count, crystal_map_filename,pedestals_filenam
     with open(file_coincidenze,'wb+') as f:
         data2 = json.loads(zlib.decompress(open(crystal_map_filename,'rb').read()).decode('ascii'))
         i, j = 0, 314
-        arr_calibrazione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,113,200))     #array dove storo le informazioni di calibrazione energetica
-        arr_risoluzione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,113,200))
+        arr_calibrazione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS+1,fun.N_BINS))     #array dove storo le informazioni di calibrazione energetica
+        arr_risoluzione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS+1,fun.N_BINS))
 
         while(i>=0 and j>0):
             print(i)
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('-ris','--resolution_filename', help = 'file containing energy resolution values', default = 'energy_resolution.json')
     parser.add_argument('-CTR','--coincidence_time_resolution', help='compute and show histogram of time differences', default = True)
     parser.add_argument('-spectrum', '--plot_pixel_spectra', help='this is a list where the first element is True/False and the remains stand for [[TX], [ASIC]]', default = [False,[12,13],[8,9,10]])
-    parser.add_argument('-ew','--energy_window', help='this is a list where the first element is True/False and the remains stand for [energy_min, energy_max]', default = [False, 350,650])
+    parser.add_argument('-ew','--energy_window', help='this is a list where the first element is True/False and the remains stand for [energy_min, energy_max]', default = [False,fun.ENERGY_WINDOW[0],fun.ENERGY_WINDOW[1]])
     parser.add_argument('-mp','--multiprocessing',help='activate multiprocessing to compute "pedestal_and_tdc" function',default=False)
 
 

@@ -26,15 +26,20 @@ logging.basicConfig(level=logging.INFO)
 
 N_TX = 18
 N_ASIC = 12
-PEDESTAL_BINS = 99
+PEDESTAL_BINS = 100
 TDC_BINS = 1024
+CORRECTION_TDC_OFFSET = 30
 T_ASIC_CHANNELS = 64
 TDC_CALIBRATED_BITS = 14
 TOP_BITS = 16
 COARSE_BITS = 10
 TDC_UNIT_NS = 25 / 16384 #ns
-
 FLOODMAP_SIZE = 200
+ENERGY_RANGE = [0,2000]
+ENERGY_RANGE_CALIBRATED = [0,1000]
+ENERGY_WINDOW=[350,650]
+N_BINS = 200
+N_BINS_CTR = 120
 
 T_ASIC_TEMP_EVENT = np.dtype([
     ('tx_id'     , np.uint8),
@@ -117,14 +122,14 @@ def hist_pedestals(infile,found_tx,found_ic):
     arr : numpy.array
           array with energy values for every pixel
     """
-    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,PEDESTAL_BINS)) #tx,asic,channels,bins
+    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,PEDESTAL_BINS-1)) #tx,asic,channels,bins
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
             a = infile[np.logical_and(tx_ids,infile['asic_id']==sel_ic)]
             charge=a['energy']
             for i in range(0,T_ASIC_CHANNELS): #loop sui canali
-                n,b=np.histogram(charge[:,i],bins=np.linspace(0,100,100))
+                n,b=np.histogram(charge[:,i],bins=np.linspace(0,PEDESTAL_BINS,PEDESTAL_BINS))
                 arr[sel_tx,sel_ic,i,:]=n
     return arr
 
@@ -222,8 +227,8 @@ def find_tdc_range_to_correct(finetime,xdata,pixel):
         range_correct = [0]
         mean = 0
     else:
-        values = xdata[int(peaks[0])-30 : int(peaks[0])+30]
-        mean = (finetime[int(peaks[0])-30] + finetime[int(peaks[0])+30])/2
+        values = xdata[int(peaks[0])-CORRECTION_TDC_OFFSET : int(peaks[0])+CORRECTION_TDC_OFFSET]
+        mean = (finetime[int(peaks[0])-CORRECTION_TDC_OFFSET] + finetime[int(peaks[0])+CORRECTION_TDC_OFFSET])/2
         range_correct = [values[0],values[-1]]
     return range_correct, mean
 
@@ -302,11 +307,11 @@ def floodmap(infile, found_tx, found_ic, data0):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
             charge = infile['energy'][np.logical_and(tx_ids,infile['asic_id']==sel_ic)] -  data0['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]
-            charge = np.ma.masked_less_equal(charge,0).reshape(-1,8,8)
+            charge = np.ma.masked_less_equal(charge,0).reshape(-1,int(np.sqrt(T_ASIC_CHANNELS)),int(np.sqrt(T_ASIC_CHANNELS)))
             charge_sums = charge.sum(axis=1).sum(axis=1)
             event_x = charge.sum(axis=1).dot(np.arange(charge[0,0].size))/charge_sums
             event_y = charge.sum(axis=2).dot(np.arange(charge[0,:,0].size))/charge_sums
-            fmap_val, _, _ = np.histogram2d(event_y, event_x,bins=(np.linspace(0,7,201),np.linspace(0,7,201)))
+            fmap_val, _, _ = np.histogram2d(event_y, event_x,bins=(np.linspace(0,(int(np.sqrt(T_ASIC_CHANNELS))-1),N_BINS+1),np.linspace(0,(int(np.sqrt(T_ASIC_CHANNELS))-1),N_BINS+1)))
             floodmap_array[sel_tx,sel_ic,:,:] = fmap_val
 
     return floodmap_array,event_x,event_y
@@ -314,7 +319,24 @@ def floodmap(infile, found_tx, found_ic, data0):
 #NOTA: image sarebbe fmap_val, img_max sarebbe blobs_log e labels sarebbe lut
 @profile
 def generate_maps(fmap_val,lista_cry):
+    """
+    This function generates the maps using watershed segmentation algorithm.
 
+    Parameters
+    ----------
+    fmap_val : numpy.array
+               floodmap values
+    lista_cry : list
+                detector's crystals for the map
+    Returns
+    -------
+    fmap_val : numpy.array
+               floodmap values
+    blobs_log : numpy.array
+                blobs values obtained by using scipy.ndimage.maximum_filter
+    lut : numpy.array
+          look-up table, results of the watershed segmentation algorithm
+    """
     #AGGIUNGERE DOCUMENTAZIONE
 
     #applicazione dell'algoritmo di watershed
@@ -340,21 +362,30 @@ def generate_maps(fmap_val,lista_cry):
 @profile
 def find_LUT(floodmap_array,found_tx, found_ic, showmaps, crystals_filename):
     """
-    AGGIUNGERE DOCUMENTAZIONE
+    Function that writes in a json file the informations about the floodmap, the blobs and the look-up table for every tx and asic.
+
+    Parameters
+    ----------
+    floodmap_array : numpy.array
+                     floodmap values
+    found_tx : list
+               tx found in the acquisition file
+    found_ic : list
+               asic found in the acquisition file
+    showmaps : boolean variable
+               when it's set to TRUE the function 'plot_maps' is activated
+    crystals_filename : .json
+                        output file containing floodmap, blobs and lut values for every tx and asic
+    Returns
+    -------
+    None : None
     """
     crystalmap_dict = {}
     for sel_tx_i,sel_tx in enumerate(found_tx):
         crystalmap_dict['TX_{}'.format(sel_tx)] = {}
         for sel_ic_i, sel_ic in enumerate(found_ic):
-            if sel_tx == 12 :
-                CRY_BOT_W, CRY_BOT_H, CRY_TOP_W, CRY_TOP_H = [8,8,0,0]
-            else:
-                CRY_BOT_W, CRY_BOT_H, CRY_TOP_W, CRY_TOP_H = [8,8,7,7]
-            """
-            if ((sel_tx == 12 and sel_ic == 11)):
-                continue
-            else:
-            """
+            CRY_BOT_W, CRY_BOT_H, CRY_TOP_W, CRY_TOP_H = [int(np.sqrt(T_ASIC_CHANNELS)),int(np.sqrt(T_ASIC_CHANNELS)),0,0]
+
             #print(np.shape(floodmap_array[sel_tx, sel_ic,:,:]))
             fmap_val, blobs_log, lut = generate_maps(floodmap_array[sel_tx, sel_ic,:,:],[CRY_BOT_W, CRY_BOT_H, CRY_TOP_W, CRY_TOP_H])
             if showmaps:
@@ -369,7 +400,23 @@ def find_LUT(floodmap_array,found_tx, found_ic, showmaps, crystals_filename):
 @profile
 def plot_maps(fmap_val,blobs_log,lut,sel_tx,sel_ic):
     """
-    AGGIUNGERE DOCUMENTAZIONE
+    Function that plots and shows the floodmap, the blobs and the look-up table for a selected tx and asic.
+
+    Parameters
+    ----------
+    fmap_val : numpy.array
+               floodmap values
+    blobs_log : numpy.array
+                blobs values obtained by using scipy.ndimage.maximum_filter
+    lut : numpy.array
+          look-up table, results of the watershed segmentation algorithm
+    sel_tx : int
+             number of the selected tx in which it plots the maps
+    sel_ic : int
+             number of the selected asic in which it plots the maps
+    Returns
+    -------
+    None : None
     """
     sel_tx = sel_tx if 'TX' in str(sel_tx) else f'TX{sel_tx:02d}'
     sel_ic = sel_ic if 'ASIC' in str(sel_ic) else f'ASIC{sel_ic:02d}'
@@ -409,11 +456,11 @@ def get_pixel(charge,lut):
     pixel_ids : numpy.array
                 array with identification number for the pixels
     """
-    charge = np.ma.masked_less_equal(charge,0).reshape(-1,8,8)
+    charge = np.ma.masked_less_equal(charge,0).reshape(-1,int(np.sqrt(T_ASIC_CHANNELS)),int(np.sqrt(T_ASIC_CHANNELS)))
     charge_sums = charge.sum(axis=1).sum(axis=1)
     event_x = charge.sum(axis=1).dot(np.arange(charge[0,0].size))/charge_sums
     event_y = charge.sum(axis=2).dot(np.arange(charge[0,:,0].size))/charge_sums
-    pixel_ids = lut[np.clip((event_y/(7)*lut[1].size).astype('i2'),0,198),np.clip((event_x/(7)*lut[0].size).astype('i2'),0,198)]
+    pixel_ids = lut[np.clip((event_y/(7)*lut[1].size).astype('i2'),0,FLOODMAP_SIZE-2),np.clip((event_x/(7)*lut[0].size).astype('i2'),0,FLOODMAP_SIZE-2)]
     return pixel_ids
 
 @profile
@@ -550,12 +597,12 @@ def hist_energy(array_temporaneo,pixel_ids,sel_tx,sel_ic):
     arr : numpy.array
           array with energy values for every pixel
     """
-    arr = np.zeros((N_TX,N_ASIC,113,200))
+    arr = np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS+1,N_BINS))
     found_pixel = list(map(int,np.unique(pixel_ids)))
 
     for sel_pixel_i, sel_pixel in enumerate(found_pixel):
         mask_pixel = array_temporaneo['pixel_id'] == sel_pixel
-        n,b = np.histogram(array_temporaneo['energy'][mask_pixel],bins=np.linspace(0,2000,201))
+        n,b = np.histogram(array_temporaneo['energy'][mask_pixel],bins=np.linspace(ENERGY_RANGE[0],ENERGY_RANGE[1],N_BINS+1))
 
         arr[sel_tx,sel_ic,sel_pixel,:] = n
     return arr
@@ -588,7 +635,7 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
     arr : numpy.array
           output of the 'hist_energy' function applied to the timestamped events
     """
-    arr = np.zeros((N_TX,N_ASIC,113,200))
+    arr = np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS+1,N_BINS))
     with open ('temp.dat', 'wb+') as f:
         for sel_tx_i, sel_tx in enumerate(found_tx):
             tx_ids = infile['tx_id']==sel_tx
@@ -665,15 +712,12 @@ def find_energy_calibration(found_tx, found_ic,arr_calibrazione_energetica,effic
     efficiencies_dict = {}
     for sel_tx_i, sel_tx in enumerate(found_tx):
         efficiencies_dict['TX_{}'.format(sel_tx)] = {}
-        if (sel_tx == 12):
-            found_pixel = np.linspace(0,112,113)
-        else:
 
-            found_pixel = np.linspace(0,63,T_ASIC_CHANNELS)
+        found_pixel = np.linspace(0,T_ASIC_CHANNELS-1,T_ASIC_CHANNELS)
 
         for sel_ic_i, sel_ic in enumerate(found_ic):
             eff = []
-            e = np.linspace(0,2000,210)
+            e = np.linspace(ENERGY_RANGE[0],ENERGY_RANGE[1],N_BINS+1)
 
             for sel_pixel_i, sel_pixel in enumerate (found_pixel):
                 #print(np.shape(arr_calibrazione_energetica))
@@ -705,7 +749,7 @@ def apply_energy_calibration(infile,energy_cal, found_tx, found_ic):
     arr : numpy.array
           array containing all the calibrated energy values for every pixel
     """
-    arr = np.zeros((N_TX,N_ASIC,113,200))
+    arr = np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS+1,N_BINS))
     for sel_tx_i, sel_tx in enumerate(found_tx):
             tx_ids = infile['tx_id']==sel_tx
             for sel_ic_i, sel_ic in enumerate(found_ic):
@@ -714,7 +758,7 @@ def apply_energy_calibration(infile,energy_cal, found_tx, found_ic):
                 for pixid, efficiency in enumerate(energy_cal['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]):
                     sel = np.logical_and(tx_ic_ids,infile['pixel_id']==pixid)
                     infile['energy'][sel] = infile['energy'][sel] * efficiency
-                    n,b = np.histogram(infile['energy'][sel],bins=np.linspace(0,1000,201))
+                    n,b = np.histogram(infile['energy'][sel],bins=np.linspace(ENERGY_RANGE_CALIBRATED[0],ENERGY_RANGE_CALIBRATED[1],N_BINS+1))
                     arr[sel_tx,sel_ic,pixid,:] += n
     return arr
 
@@ -727,7 +771,10 @@ def f(x, C, mu, sigma):
 
 @profile
 def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
-    xdata_mask = np.logical_and(xdata<650 , xdata>350)
+    """
+    DOCUMENTAZIONEEE
+    """
+    xdata_mask = np.logical_and(xdata<ENERGY_WINDOW[1] , xdata>ENERGY_WINDOW[0])
     popt, pcov = curve_fit(f, xdata[xdata_mask], spectrum[xdata_mask], p0=[150000,400,30])
     """
     plt.plot(xdata, f(xdata, *popt), label='fit')
@@ -759,7 +806,7 @@ def find_CTR(file_coincidenze,count,lista_energia):
     None : None
     """
     i, j = 0, 314
-    array_CTR=np.zeros((120))
+    array_CTR=np.zeros((N_BINS_CTR))
     while(i>=0 and j>0):
         infile = np.fromfile(file_coincidenze,dtype=T_SINGLE_EVENT_PIXELATED,count=int(count),offset=((T_SINGLE_EVENT_PIXELATED.itemsize)*i*int(count)))
         if lista_energia[0]:
@@ -773,7 +820,7 @@ def find_CTR(file_coincidenze,count,lista_energia):
             infile = infile[mask5]
 
         coinc_diff = infile['timestamp'][::2]-infile['timestamp'][1::2]# coincidences['timestamp'][1,:] - coincidences['timestamp'][0,:]
-        n,b = np.histogram(coinc_diff * TDC_UNIT_NS, bins = 120)
+        n,b = np.histogram(coinc_diff * TDC_UNIT_NS, bins = N_BINS_CTR)
         array_CTR += n
         i+=1
         if (infile.size != int(count)):
@@ -799,12 +846,12 @@ def plot_spectrum(array_energia,tx,asic):
     tx : int
          tx identification number
     asic : int
-           asic identification number+
+           asic identification number
     Returns
     -------
     None : None
     """
-    x =np.linspace(0,1000,200)
+    x =np.linspace(ENERGY_RANGE_CALIBRATED[0],ENERGY_RANGE_CALIBRATED[1],N_BINS)
     for sel_tx in tx:
         for sel_ic in asic:
             for pixel in range(0,T_ASIC_CHANNELS):
@@ -827,7 +874,7 @@ def find_energy_resolution(arr_risoluzione_energetica):
     -------
     None : None
     """
-    x = np.linspace(0,1000,200)
+    x = np.linspace(ENERGY_RANGE_CALIBRATED[0],ENERGY_RANGE_CALIBRATED[1],N_BINS)
 
     y = arr_risoluzione_energetica.sum(axis = 0)
     y1 = y.sum(axis = 0)
