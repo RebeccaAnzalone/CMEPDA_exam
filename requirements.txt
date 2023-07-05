@@ -1,6 +1,6 @@
 numpy
 matplotlib
-sklearn
+scikit-learn
 plotly
 scipy
 scikit-image
