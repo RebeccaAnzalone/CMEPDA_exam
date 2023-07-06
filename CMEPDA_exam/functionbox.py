@@ -684,6 +684,7 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
 def find_peak(n,window_size=19,order=7,threshold=0.5):
     """
     Function that uses the 'savgol_filter' form scipy.signal to find peaks in the energy histogram.
+    
     Parameters
     ----------
     n : numpy.array
