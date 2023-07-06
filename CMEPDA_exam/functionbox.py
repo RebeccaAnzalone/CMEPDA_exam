@@ -683,12 +683,23 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
 @profile
 def find_peak(n,window_size=19,order=7,threshold=0.5):
     """
-    AGGIUNGERE DOCUMENTAZIONE
+    Function that uses the 'savgol_filter' form scipy.signal to find peaks in the energy histogram.
+    Parameters
+    ----------
+    n : numpy.array
+        data to be filtered
+    Returns
+    -------
+    filtered : numpy.array
+               filtered data
+    rightmost_peak : numpy.array
+                     rightmost filtered data
     """
     filtered = signal.savgol_filter(n, window_size, order) #trova picchi
     filtered = filtered / filtered.mean() * n.mean() #normalizzali
     filtered[filtered < threshold*n.max()] = 0 #elimina i picchi bassi
-    return filtered, (np.nonzero(np.diff(-np.sign(np.diff(filtered))).clip(0))[0]+2)[-1] # take the rightmost peak
+    rightmost_peak = (np.nonzero(np.diff(-np.sign(np.diff(filtered))).clip(0))[0]+2)[-1]
+    return filtered, rightmost_peak # take the rightmost peak
 
 @profile
 def find_energy_calibration(found_tx, found_ic,arr_calibrazione_energetica,efficiencies_filename):
@@ -773,7 +784,19 @@ def f(x, C, mu, sigma):
 @profile
 def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
     """
-    DOCUMENTAZIONEEE
+    This function is a Gaussian fit and it calculates the energy resolution and its uncertainty.
+    Parameters
+    ----------
+    spectrum : numpy.array
+               array containing the energy spectrum
+    xdata : numpy.array
+            array containing the x values of the energy spectrum
+    Returns
+    -------
+    risoluzione_en : float
+                     energy resolution
+    u_R : float
+          energy resolution's uncertainty
     """
     xdata_mask = np.logical_and(xdata<ENERGY_WINDOW[1] , xdata>ENERGY_WINDOW[0])
     popt, pcov = curve_fit(f, xdata[xdata_mask], spectrum[xdata_mask], p0=[150000,400,30])
