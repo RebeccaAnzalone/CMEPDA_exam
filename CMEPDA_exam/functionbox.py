@@ -259,14 +259,14 @@ def find_tdc(arr,found_tx,found_ic,tdc_filename):
         tdc_dict['TX_{}'.format(sel_tx)]={}
         for sel_ic_i,sel_ic in enumerate(found_ic):
             t_cal = np.zeros((T_ASIC_CHANNELS,TDC_BINS),dtype=np.int16)-1
-            count = 0
+            #count = 0
             for i in range(0,T_ASIC_CHANNELS):
                 xdata = np.arange(4.5,TDC_BINS+0.5)
                 xdata = 0.5*(xdata[1:]-xdata[:-1])
                 try:
                     range_corrected, mean = find_tdc_range_to_correct(arr[sel_tx,sel_ic,i,:],xdata,i)
                     if mean != 0:
-                        h[range_corrected[0]:range_corrected[1]] = mean
+                        arr[range_corrected[0]:range_corrected[1]] = mean
                 except:
                     pass
 
@@ -684,7 +684,7 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
 def find_peak(n,window_size=19,order=7,threshold=0.5):
     """
     Function that uses the 'savgol_filter' form scipy.signal to find peaks in the energy histogram.
-    
+
     Parameters
     ----------
     n : numpy.array
@@ -786,6 +786,7 @@ def f(x, C, mu, sigma):
 def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
     """
     This function is a Gaussian fit and it calculates the energy resolution and its uncertainty.
+
     Parameters
     ----------
     spectrum : numpy.array
