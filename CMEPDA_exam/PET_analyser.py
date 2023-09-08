@@ -4,7 +4,6 @@ import numpy as np
 import functionbox as fun
 from pylab import subplots, hist, plot, Circle, cm
 from skimage.feature import blob_log
-#from skimage.morphology import watershed
 from skimage.segmentation import watershed
 from scipy.optimize import curve_fit
 from scipy import signal
@@ -26,7 +25,7 @@ profile = line_profiler.LineProfiler()
 @profile
 def pedestal_and_tdc(input_file_name,count,pedestals_filename,tdc_filename):
     """
-    'pedestal_and_tdc' is a function that calculates pedestal values and find the right fine time values for every pixel computing 'find_pedestals' and 'find_tdc' functions.
+    'pedestal_and_tdc' is a function that calculates pedestal values and find the right fine time values for every pixel computing 'functionbox.find_pedestals' and 'functionbox.find_tdc' functions.
 
     Parameters
     ----------
@@ -44,8 +43,8 @@ def pedestal_and_tdc(input_file_name,count,pedestals_filename,tdc_filename):
     """
 
     i, j = 0, 314
-    pedestal_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.PEDESTAL_BINS-1)) #tx,asic,channels,bins
-    tdc_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.TDC_BINS)) #tx,asic,channels,bins
+    pedestal_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.PEDESTAL_BINS-1))
+    tdc_array=np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS,fun.TDC_BINS))
     while (i >=0 and j >0):
         infile = np.fromfile(input_file_name,dtype=fun.T_ASIC_TEMP_EVENT,count=int(count),offset=((fun.T_ASIC_TEMP_EVENT.itemsize)*i*int(count)))
         found_tx,found_ic=fun.find_tx_asic(infile)
@@ -68,7 +67,26 @@ def pedestal_and_tdc(input_file_name,count,pedestals_filename,tdc_filename):
 
 
 @profile
-def crystal_map(input_file_name,count,crystal_map_filename, pedestals_filename, showmaps):
+def crystal_map(input_file_name,count,crystal_map_filename,pedestals_filename,showmaps):
+    """
+    'crystal_map' is a function that gives a file containing informations about crystal map computing 'functionbox.floodmap' and 'functionbox.find_LUT' functions.
+
+    Parameters
+    ----------
+    input_file_name : .dat.dec
+                      acquisition file
+    count : int
+            size of subfile to process
+    crystal_map_filename : .zjson
+                           output file with crystal map informations
+    pedestals_filename : .json
+                         file containing pedestal values
+    showmaps : boolean variable
+               when it's set to TRUE the function 'functionbox.plot_maps' is activated
+    Returns
+    -------
+    None : None
+    """
     if os.path.isfile(crystal_map_filename):
         print('LUT does already exist!')
     else:
@@ -91,8 +109,37 @@ def crystal_map(input_file_name,count,crystal_map_filename, pedestals_filename, 
 
 @profile
 
-def main_timestamp(input_file_name,count, crystal_map_filename,pedestals_filename,tdc_filename,file_coincidenze,CW,file_energy_calibration,resolution_filename):
+def main_timestamp(input_file_name,count,crystal_map_filename,pedestals_filename,tdc_filename,file_coincidenze,CW,file_energy_calibration,arr_resolution):
+    """
+    Main function that computes 'functionbox.compute_events', 'functionbox.find_energy_calibration', 'functionbox.apply_energy_calibration' and 'functionbox.find_energy_resolution' functions to obtain a file containing all the coincidences and an array with all the energy calibrated values.
 
+    Parameters
+    ----------
+    input_file_name : .dat.dec
+                      acquisition file
+    count : int
+            size of subfile to process
+    crystal_map_filename : .zjson
+                           file with crystal map informations
+    pedestals_filename : .json
+                         file containing pedestal values
+    tdc_filename : .json
+                   file containing calibrated fine time values
+    file_coincidenze : .dat.dec
+                       output file with coincidences
+    CW : int
+         Coincidence Window
+    file_energy_calibration : .json
+                              file containing energy calibration coefficients
+    arr_resolution : numpy.array
+                     array with all the energy calibrated values used to compute energy resolution
+    Returns
+    -------
+    file_coincidenze : .dat.dec
+                       output file with coincidences
+    arr_risoluzione_energetica : numpy.array
+                                 array with all the energy calibrated values
+    """
     lista = []
     with open(pedestals_filename) as json_file0:
         data0 = json.load(json_file0)
@@ -101,7 +148,7 @@ def main_timestamp(input_file_name,count, crystal_map_filename,pedestals_filenam
     with open(file_coincidenze,'wb+') as f:
         data2 = json.loads(zlib.decompress(open(crystal_map_filename,'rb').read()).decode('ascii'))
         i, j = 0, 314
-        arr_calibrazione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS+1,fun.N_BINS))     #array dove storo le informazioni di calibrazione energetica
+        arr_calibrazione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS+1,fun.N_BINS))   #array with energy calibration informations
         arr_risoluzione_energetica = np.zeros((fun.N_TX,fun.N_ASIC,fun.T_ASIC_CHANNELS+1,fun.N_BINS))
 
         while(i>=0 and j>0):
@@ -110,7 +157,7 @@ def main_timestamp(input_file_name,count, crystal_map_filename,pedestals_filenam
             found_tx,found_ic=fun.find_tx_asic(infile)
 
             coincidences,arr_energy = fun.compute_events(infile,found_tx,found_ic,data0,data1,data2,CW)
-            print('numero di coincidenze', int(np.shape(coincidences)[0]/2),'-------->', np.shape(coincidences)[0]/(int(count)/2))
+            print('number of coincidences', int(np.shape(coincidences)[0]/2),'-------->', np.shape(coincidences)[0]/(int(count)/2))
             lista.append(np.shape(coincidences)[0]/(int(count)/2))
             arr_calibrazione_energetica += arr_energy
             coincidences.tofile(f)
@@ -142,11 +189,11 @@ def main_timestamp(input_file_name,count, crystal_map_filename,pedestals_filenam
 
 
 
-    if os.path.isfile(resolution_filename):
-        print('energy_resolution file already exist!')
-    else:
-        print('adesso trovo la risoluzione_energetica')
-        fun.find_energy_resolution(arr_risoluzione_energetica)
+    #if os.path.isfile(resolution_filename):
+        #print('energy_resolution file already exist!')
+    #else:
+    print('computing energy resolution')
+    fun.find_energy_resolution(arr_risoluzione_energetica)
 
 
 
@@ -165,8 +212,9 @@ if __name__ == "__main__":
     parser.add_argument('-lut','--crystal_map_filename',help='json file that stores LUT',default='crystals.zjson')
     parser.add_argument('-showmaps','--show_floodmap_LUT',help='Show floodmaps for each ASIC and LUT',default=False)
     parser.add_argument('-calib','--energy_calibration', help = 'json file that stores energy calibration values', default = 'en_calibration.json')
-    parser.add_argument('-o','--outfile', help = 'outup file containing coincidences events', default = 'coincidences.dat.dec')
-    parser.add_argument('-ris','--resolution_filename', help = 'file containing energy resolution values', default = 'energy_resolution.json')
+    parser.add_argument('-o','--outfile', help = 'output file containing coincidences events', default = 'coincidences.dat.dec')
+    #parser.add_argument('-ris','--resolution_filename', help = 'file containing energy resolution values', default = 'energy_resolution.json')
+    parser.add_argument('-ris','--resolution_array', help = 'array containing energy resolution values')
     parser.add_argument('-CTR','--coincidence_time_resolution', help='compute and show histogram of time differences', default = True)
     parser.add_argument('-spectrum', '--plot_pixel_spectra', help='this is a list where the first element is True/False and the remains stand for [[TX], [ASIC]]', default = [False,[12,13],[8,9,10]])
     parser.add_argument('-ew','--energy_window', help='this is a list where the first element is True/False and the remains stand for [energy_min, energy_max]', default = [False,fun.ENERGY_WINDOW[0],fun.ENERGY_WINDOW[1]])
@@ -195,7 +243,7 @@ if __name__ == "__main__":
          pedestal_and_tdc(args.input_file,args.count_events,args.pedestals_filename,args.tdc_calibration_filename)
 
     crystal_map(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename, args.show_floodmap_LUT)
-    coincidences_file,spectrum_array = main_timestamp(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_filename)
+    coincidences_file,spectrum_array = main_timestamp(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_array)
 
     if args.coincidence_time_resolution:
         fun.find_CTR(coincidences_file,args.count_events, args.energy_window)

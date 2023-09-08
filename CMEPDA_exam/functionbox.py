@@ -4,7 +4,6 @@ import numpy as np
 import logging
 from pylab import subplots, hist, plot, Circle, cm
 from skimage.feature import blob_log
-#from skimage.morphology import watershed
 from skimage.segmentation import watershed
 from scipy.optimize import curve_fit
 from scipy import signal
@@ -34,7 +33,7 @@ T_ASIC_CHANNELS = 64
 TDC_CALIBRATED_BITS = 14
 TOP_BITS = 16
 COARSE_BITS = 10
-TDC_UNIT_NS = 25 / 16384 #ns
+TDC_UNIT_NS = 25 / 16384
 FLOODMAP_SIZE = 200
 ENERGY_RANGE = [0,2000]
 ENERGY_RANGE_CALIBRATED = [0,1000]
@@ -123,13 +122,13 @@ def hist_pedestals(infile,found_tx,found_ic):
     arr : numpy.array
           array with energy values for every pixel
     """
-    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,PEDESTAL_BINS-1)) #tx,asic,channels,bins
+    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,PEDESTAL_BINS-1))
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
             a = infile[np.logical_and(tx_ids,infile['asic_id']==sel_ic)]
             charge=a['energy']
-            for i in range(0,T_ASIC_CHANNELS): #loop sui canali
+            for i in range(0,T_ASIC_CHANNELS):
                 n,b=np.histogram(charge[:,i],bins=np.linspace(0,PEDESTAL_BINS,PEDESTAL_BINS))
                 arr[sel_tx,sel_ic,i,:]=n
     return arr
@@ -152,13 +151,13 @@ def hist_tdc(infile,found_tx,found_ic):
     arr : numpy.array
           array with fine time values for every pixel
     """
-    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,TDC_BINS)) #tx,asic,channels,bins
+    arr=np.zeros((N_TX,N_ASIC,T_ASIC_CHANNELS,TDC_BINS))
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tx_ids=infile['tx_id']==sel_tx
         for sel_ic_i,sel_ic in enumerate(found_ic):
             a = infile[np.logical_and(tx_ids,infile['asic_id']==sel_ic)]
             fine=a['fine']
-            for i in range(0,T_ASIC_CHANNELS): #loop sui canali
+            for i in range(0,T_ASIC_CHANNELS):
                 n,b=np.histogram(fine[:,i],bins=np.arange(4.5,TDC_BINS+0.5))
                 arr[sel_tx,sel_ic,i,5:]=n
     return arr
@@ -183,8 +182,6 @@ def find_pedestals(arr,found_tx,found_ic,pedestals_filename):
     None : None
     """
     pedestals_dict={}
-    #found_tx=np.nonzero(np.unique(arr[:,0]))[0]
-    #found_ic=np.nonzero(np.unique(arr[:,1]))[0]
     for sel_tx_i,sel_tx in enumerate(found_tx):
         pedestals_dict['TX_{}'.format(sel_tx)]={}
         for sel_ic_i,sel_ic in enumerate(found_ic):
@@ -253,13 +250,10 @@ def find_tdc(arr,found_tx,found_ic,tdc_filename):
     None : None
     """
     tdc_dict={}
-    #found_tx=np.nonzero(np.unique(arr[:,0]))[0]
-    #found_ic=np.nonzero(np.unique(arr[:,1]))[0]
     for sel_tx_i,sel_tx in enumerate(found_tx):
         tdc_dict['TX_{}'.format(sel_tx)]={}
         for sel_ic_i,sel_ic in enumerate(found_ic):
             t_cal = np.zeros((T_ASIC_CHANNELS,TDC_BINS),dtype=np.int16)-1
-            #count = 0
             for i in range(0,T_ASIC_CHANNELS):
                 xdata = np.arange(4.5,TDC_BINS+0.5)
                 xdata = 0.5*(xdata[1:]-xdata[:-1])
@@ -338,25 +332,11 @@ def generate_maps(fmap_val,lista_cry):
     lut : numpy.array
           look-up table, results of the watershed segmentation algorithm
     """
-    #AGGIUNGERE DOCUMENTAZIONE
 
-    #applicazione dell'algoritmo di watershed
-
-    #(cx,cy) = floodmap(infile, found_tx, found_ic, data0) #coord dei centroidi
-    #print(cx, cy)
-    #image,xe,ye = np.histogram2d(cx,cy, bins=[np.linspace(0,7,201),np.linspace(0,7,201)])
-
-    #distance = ndi.distance_transform_edt(image)
+    #watershed algorithm
     blobs_log = ndi.maximum_filter(fmap_val, size=20, mode='constant')
-    #print(img_max)
-    #local_maxi = peak_local_max(image, indices=False, min_distance=10)
-    #print(local_maxi)
-    #markers = ndi.label(local_maxi)[0]
-    #print(markers)
     lut = watershed(-blobs_log,T_ASIC_CHANNELS,watershed_line=False)
-    #print(np.unique(lut,return_counts=True))
-    #print(len(labels))
-    #print(lut)
+
 
     return fmap_val, blobs_log, lut
 
@@ -387,7 +367,6 @@ def find_LUT(floodmap_array,found_tx, found_ic, showmaps, crystals_filename):
         for sel_ic_i, sel_ic in enumerate(found_ic):
             CRY_BOT_W, CRY_BOT_H, CRY_TOP_W, CRY_TOP_H = [int(np.sqrt(T_ASIC_CHANNELS)),int(np.sqrt(T_ASIC_CHANNELS)),0,0]
 
-            #print(np.shape(floodmap_array[sel_tx, sel_ic,:,:]))
             fmap_val, blobs_log, lut = generate_maps(floodmap_array[sel_tx, sel_ic,:,:],[CRY_BOT_W, CRY_BOT_H, CRY_TOP_W, CRY_TOP_H])
             if showmaps:
                 plot_maps(fmap_val,blobs_log,lut,sel_tx,sel_ic)
@@ -487,12 +466,11 @@ def calculate_timestamps(infile,sel_tx,sel_ic, tdc_calibration):
     tdc_calibration['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)] = np.array(tdc_calibration['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)])
     t_cal = tdc_calibration['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]
     tfine_raw = np.ma.masked_less_equal(infile['fine'],0)
-    tfine = np.ma.masked_where(tfine_raw.mask,np.take_along_axis(t_cal.T,tfine_raw,axis=0)) # apply calibration... non dovrebbe gia essere in ps?
+    tfine = np.ma.masked_where(tfine_raw.mask,np.take_along_axis(t_cal.T,tfine_raw,axis=0)) #apply finetime calibration
     tglobal = infile['global'].astype(np.int64)
     ttop    = infile['top'].astype(np.int64)
     tcoarse = infile['coarse'].astype(np.int64)
 
-    # numpy.where(tcoarse>900,axis=1)
     tbc = np.logical_and((ttop & 1) != infile['extra_bit'],tcoarse.max(axis=1) > 900)
     ttop[tbc] -= 1
     tfine  = tfine.astype(np.int64)
@@ -503,8 +481,7 @@ def calculate_timestamps(infile,sel_tx,sel_ic, tdc_calibration):
             tfine
         )
     channel_timestamps[tbc] -= 2 << (COARSE_BITS + TDC_CALIBRATED_BITS)
-    #print(np.shape(channel_timestamps))
-    #print ((channel_timestamps[0,:])* (25*(10**(-9))/16384))
+
     return channel_timestamps
 
 @profile
@@ -526,22 +503,14 @@ def choose_timestamp(AVERAGE, timestamp, charge):
     arr : numpy.array
           array with timestamp values for every event
     """
-    th = 0 #somma*0.40
+    th = 0
     cc = np.ma.masked_less_equal(charge,th)
-    #faccio due funzioni per gestire 0 e 4.
-    #se incontro 1,2 e 3 butto l'evento e lo segnalo
+
     if AVERAGE:
         arr = np.average(timestamp, weights = cc, axis = 1)
     else:
-        arr = np.take_along_axis(timestamp,np.ma.masked_less_equal(charge,0).argmax(axis=1).reshape(-1,1),axis=1)[:,0]
-        #print(np.shape(arr))
-        #print ((arr)* (25*(10**(-9))/16384))
-        #plt.figure()
-        #plt.title('Events in TX {} ASIC {}'.format(sel_tx,sel_ic))
-        #plt.xlabel('time [s]')
-        #occ, edges,_= plt.hist((arr)*(25*(10**(-9))/16384), bins=np.arange(0,20,1))
-        #print(np.arange(0,int(acquisition_time),1))
-        #plt.show()
+        arr = np.take_along_axis(timestamp, cc.argmax(axis=1).reshape(-1,1),axis=1)[:,0]
+
     return arr
 
 @profile
@@ -561,9 +530,6 @@ def get_coincidences_all(infile,CW):
             coincidences' array
     """
     coinc_window = CW/TDC_UNIT_NS
-    #infile3 = infile[np.logical_and(infile['energy']<650 ,infile['energy']>400 )]
-    #infile2 = infile1[bottommask]
-    #print('sto selezionando solo gli eventi del bottom')
 
     coincident_first  = np.nonzero(np.diff(infile['timestamp']) < coinc_window)[0]
     coincident_second = coincident_first + 1
@@ -696,11 +662,11 @@ def find_peak(n,window_size=19,order=7,threshold=0.5):
     rightmost_peak : numpy.array
                      rightmost filtered data
     """
-    filtered = signal.savgol_filter(n, window_size, order) #trova picchi
-    filtered = filtered / filtered.mean() * n.mean() #normalizzali
-    filtered[filtered < threshold*n.max()] = 0 #elimina i picchi bassi
-    rightmost_peak = (np.nonzero(np.diff(-np.sign(np.diff(filtered))).clip(0))[0]+2)[-1]
-    return filtered, rightmost_peak # take the rightmost peak
+    filtered = signal.savgol_filter(n, window_size, order) #find peaks
+    filtered = filtered / filtered.mean() * n.mean() #normalize
+    filtered[filtered < threshold*n.max()] = 0 #delete "low" peaks
+    rightmost_peak = (np.nonzero(np.diff(-np.sign(np.diff(filtered))).clip(0))[0]+2)[-1] #take the rightmost peak
+    return filtered, rightmost_peak
 
 @profile
 def find_energy_calibration(found_tx, found_ic,arr_calibrazione_energetica,efficiencies_filename):
@@ -721,7 +687,7 @@ def find_energy_calibration(found_tx, found_ic,arr_calibrazione_energetica,effic
     -------
     None : None
     """
-    # arr_risoluzione_energetica = np.zeros((N_TX,12,113,200))
+
     efficiencies_dict = {}
     for sel_tx_i, sel_tx in enumerate(found_tx):
         efficiencies_dict['TX_{}'.format(sel_tx)] = {}
@@ -733,12 +699,12 @@ def find_energy_calibration(found_tx, found_ic,arr_calibrazione_energetica,effic
             e = np.linspace(ENERGY_RANGE[0],ENERGY_RANGE[1],N_BINS+1)
 
             for sel_pixel_i, sel_pixel in enumerate (found_pixel):
-                #print(np.shape(arr_calibrazione_energetica))
+
 
                 filtered, peak = find_peak(arr_calibrazione_energetica[sel_tx,sel_ic,int(sel_pixel),:])
-                #print(np.shape(arr_calibrazione_energetica[sel_tx,sel_ic,int(sel_pixel),:]))
+
                 ec = 0.5*(e[1:]+e[:-1])
-                eff.append(511./ec[peak-1]) #coefficiente di calibrazione
+                eff.append(511./ec[peak-1]) #calibration coefficient
             efficiencies_dict['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)] = eff
     json.dump(efficiencies_dict,open(efficiencies_filename,'w'),indent=4)
 
@@ -767,7 +733,7 @@ def apply_energy_calibration(infile,energy_cal, found_tx, found_ic):
             tx_ids = infile['tx_id']==sel_tx
             for sel_ic_i, sel_ic in enumerate(found_ic):
                 tx_ic_ids = np.logical_and(tx_ids,infile['asic_id']==sel_ic)
-                #print(len(tx_ic_ids))
+
                 for pixid, efficiency in enumerate(energy_cal['TX_{}'.format(sel_tx)]['ASIC_{}'.format(sel_ic)]):
                     sel = np.logical_and(tx_ic_ids,infile['pixel_id']==pixid)
                     infile['energy'][sel] = infile['energy'][sel] * efficiency
@@ -783,7 +749,7 @@ def f(x, C, mu, sigma):
     return C*norm.pdf(x, mu, sigma)
 
 @profile
-def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
+def fit_function(spectrum, xdata):
     """
     This function is a Gaussian fit and it calculates the energy resolution and its uncertainty.
 
@@ -802,10 +768,6 @@ def fit_function(spectrum, xdata): #senza Klein-Nishina (il fit lo fa con 'f')
     """
     xdata_mask = np.logical_and(xdata<ENERGY_WINDOW[1] , xdata>ENERGY_WINDOW[0])
     popt, pcov = curve_fit(f, xdata[xdata_mask], spectrum[xdata_mask], p0=[150000,400,30])
-    """
-    plt.plot(xdata, f(xdata, *popt), label='fit')
-    plt.show()
-    """
 
 
     risoluzione_en = 2.35*(popt[2])/popt[1]
@@ -845,7 +807,7 @@ def find_CTR(file_coincidenze,count,lista_energia):
             mask5 = mask4>0
             infile = infile[mask5]
 
-        coinc_diff = infile['timestamp'][::2]-infile['timestamp'][1::2]# coincidences['timestamp'][1,:] - coincidences['timestamp'][0,:]
+        coinc_diff = infile['timestamp'][::2]-infile['timestamp'][1::2]
         n,b = np.histogram(coinc_diff * TDC_UNIT_NS, bins = N_BINS_CTR)
         array_CTR += n
         i+=1
@@ -905,10 +867,10 @@ def find_energy_resolution(arr_risoluzione_energetica):
     y = arr_risoluzione_energetica.sum(axis = 0)
     y1 = y.sum(axis = 0)
     y2 = y1.sum(axis = 0)
-    en, uen = fit_function(y2,x) #o fit_function_spectrum se voglio mettere la sezione d'urto di Klein-Nishina
+    en, uen = fit_function(y2,x)
 
     plt.figure()
     plt.title('total energy spectrum \n energy resolution = {:.3f} +/- {:.3f}'.format(en,uen))
     plt.plot(x,y2)
-    #plt.xlabel('energy [keV]')
+    plt.xlabel('energy [keV]')
     plt.show()
