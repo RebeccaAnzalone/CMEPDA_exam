@@ -188,10 +188,6 @@ def main_timestamp(input_file_name,count,crystal_map_filename,pedestals_filename
             j = -200
 
 
-
-    #if os.path.isfile(resolution_filename):
-        #print('energy_resolution file already exist!')
-    #else:
     print('computing energy resolution')
     fun.find_energy_resolution(arr_risoluzione_energetica)
 
@@ -213,7 +209,6 @@ if __name__ == "__main__":
     parser.add_argument('-showmaps','--show_floodmap_LUT',help='Show floodmaps for each ASIC and LUT',default=False)
     parser.add_argument('-calib','--energy_calibration', help = 'json file that stores energy calibration values', default = 'en_calibration.json')
     parser.add_argument('-o','--outfile', help = 'output file containing coincidences events', default = 'coincidences.dat.dec')
-    #parser.add_argument('-ris','--resolution_filename', help = 'file containing energy resolution values', default = 'energy_resolution.json')
     parser.add_argument('-ris','--resolution_array', help = 'array containing energy resolution values')
     parser.add_argument('-CTR','--coincidence_time_resolution', help='compute and show histogram of time differences', default = True)
     parser.add_argument('-spectrum', '--plot_pixel_spectra', help='this is a list where the first element is True/False and the remains stand for [[TX], [ASIC]]', default = [False,[12,13],[8,9,10]])
