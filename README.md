@@ -52,13 +52,13 @@ Some results acquired during the analysis are reported as example.
 
 When 'showmaps' is set to TRUE we can obtain an image showing the floodmap and the consequent operation computed on the data to recognize the pixels. This operation is computed using a watershed segmentation algorithm from scikit-image.
 
-<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/IMAGES_readme/tx13asic11.png" height="250" width="250">
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/main/IMAGES_readme/tx13asic11.png" height="250" width="250">
 
 Other important results that can be reached using this project are the energy spectrum, the energy resolution of the system and the Coincidence Time Resolution (CTR) from the spectrum of the coincidences' time differences.
 
-<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/IMAGES_readme/energy.png" height="250" width="250">
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/main/IMAGES_readme/energy.png" height="250" width="250">
 
-<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/IMAGES_readme/CTR.png" height="250" width="250">
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/main/IMAGES_readme/CTR.png" height="250" width="250">
 
 ---
 
@@ -69,5 +69,5 @@ Other important results that can be reached using this project are the energy sp
 ---
 
 [![Documentation Status](https://readthedocs.org/projects/pet-data-analysis/badge/?version=latest)](https://pet-data-analysis.readthedocs.io/en/latest/?badge=latest)
-[![Unit tests](https://github.com/RebeccaAnzalone/CMEPDA_exam/actions/workflows/unittests.yml/badge.svg)](https://github.com/RebeccaAnzalone/CMEPDA_exam/actions/workflows/tests.yml)
+[![Unit tests](https://github.com/RebeccaAnzalone/CMEPDA_exam/actions/workflows/tests.yml/badge.svg)](https://github.com/RebeccaAnzalone/CMEPDA_exam/actions/workflows/tests.yml)
 ![GitHub last commit](https://img.shields.io/github/last-commit/RebeccaAnzalone/CMEPDA_exam)
