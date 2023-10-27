@@ -52,15 +52,13 @@ Some results acquired during the analysis are reported as example.
 
 When 'showmaps' is set to TRUE we can obtain an image showing the floodmap and the consequent operation computed on the data to recognize the pixels. This operation is computed using a watershed segmentation algorithm from scikit-image.
 
-<picture>
-<src="https://github.com/RebeccaAnzalone/CMEPDA_exam/tree/main/IMAGES_readme/tx13asic11.png">
-</picture>
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/tree/main/IMAGES_readme/tx13asic11.png" height="300" width="400">
 
 Other important results that can be reached using this project are the energy spectrum, the energy resolution of the system and the Coincidence Time Resolution (CTR) from the spectrum of the coincidences' time differences.
 
-[![image2]("https://github.com/RebeccaAnzalone/CMEPDA_exam/tree/main/IMAGES_readme/energy.png")] 
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/tree/main/IMAGES_readme/energy.png" height="300" width="300"> 
 
-[![image3]("https://github.com/RebeccaAnzalone/CMEPDA_exam/tree/main/IMAGES_readme/CTR.png")]
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/tree/main/IMAGES_readme/CTR.png" height="300" width="300">
 
 ---
 
