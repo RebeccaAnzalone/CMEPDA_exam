@@ -206,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument('-p','--pedestals_filename',help='json file that stores pedestals value',default='pedestals.json')
     parser.add_argument('-tdc','--tdc_calibration_filename',help='json file that stores tdc calibration values',default='tdc_calibration.json')
     parser.add_argument('-lut','--crystal_map_filename',help='json file that stores LUT',default='crystals.zjson')
-    parser.add_argument('-showmaps','--show_floodmap_LUT',help='Show floodmaps for each ASIC and LUT',default=False)
+    parser.add_argument('-showmaps','--show_floodmap_LUT',help='Show floodmaps and LUT for each ASIC',default=False)
     parser.add_argument('-calib','--energy_calibration', help = 'json file that stores energy calibration values', default = 'en_calibration.json')
     parser.add_argument('-o','--outfile', help = 'output file containing coincidences events', default = 'coincidences.dat.dec')
     parser.add_argument('-ris','--resolution_array', help = 'array containing energy resolution values')
