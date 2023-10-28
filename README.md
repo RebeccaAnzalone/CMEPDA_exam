@@ -1,6 +1,6 @@
 # CMEPDA_exam
 
-CMEPDA_exam is a repository containing python programs that implement the analysis of raw data taken from acquisitions with a PET- detector. Positron emission tomography (PET) is a functional imaging technique that uses radioactive substances known as radiotracers to visualize and measure changes in metabolic processes. PET measures the two annihilation photons that are produced back-to-back after positron emission by the radiotracer. Scintillation pixelated detectors are used as detection elements. Due to the positron annihilation we expect to observe two photons at roughly the same time (in coincidence) in the detector. The final aim of this project is to obtain a file containing all the coincidence events that were detected by the acquisition passing through some steps. The project is made by two python scripts: 'PET_analyser.py' and 'functionbox.py'. The first one is used to compute the analysis using all the functions contained in 'functionbox.py'.
+CMEPDA_exam is a repository containing python programs that implement the analysis of raw data taken from acquisitions with a PET- detector. Positron emission tomography (PET) is a functional imaging technique that uses radioactive substances known as radiotracers to visualize and measure changes in metabolic processes. PET measures the two annihilation photons that are produced back-to-back after positron emission by the radiotracer. Scintillation pixelated detectors are used as detection elements. Due to the positron annihilation we expect to observe two photons at roughly the same time (in coincidence) in the detector. The final aim of this project is to obtain a file containing all the coincidence events that were detected by the acquisition passing through some steps. The project is made by two python scripts: [PET_analyser](https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/CMEPDA_exam/PET_analyser.py) and [functionbox](https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/CMEPDA_exam/functionbox.py). The first one is used to compute the analysis using all the functions contained in 'functionbox.py'.
 
 # How to use it
 In a nutshell, you should be able to compute 'PET_analyser.py' using python. The input raw file is a .dat.dec, a data file that have been decodified to be used in the analysis. To understand all the functionalities and options of the program is useful to use the '--help' function in this way:
@@ -52,13 +52,13 @@ Some results acquired during the analysis are reported as example.
 
 When 'showmaps' is set to TRUE we can obtain an image showing the floodmap and the consequent operation computed on the data to recognize the pixels. This operation is computed using a watershed segmentation algorithm from scikit-image.
 
-<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/IMAGES_readme/tx13asic11.png" height="300" width="600">
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/IMAGES_readme/tx13asic11.png" height="300" width="700">
 
 Other important results that can be reached using this project are the energy spectrum, the energy resolution of the system and the Coincidence Time Resolution (CTR) from the spectrum of the coincidences' time differences.
 
 <img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/IMAGES_readme/energy.png" height="300" width="400"> 
 
-<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/IMAGES_readme/CTR.png" height="300" width="400">
+<img src="https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/IMAGES_readme/CTR_new.png" height="300" width="400">
 
 ---
 

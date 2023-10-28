@@ -45,27 +45,27 @@ T_ASIC_TEMP_EVENT = np.dtype([
     ('tx_id'     , np.uint8),
     ('asic_id'   , np.uint8),
     ('extra_bit' , np.uint8), #dice se top cresce o decresce
-    ('top'       , np.uint16), #contatore tempi lunghi fa 0-n n-0
-    ('global'    , np.uint32), #contatore tempi ancora + lunghi, +1 a reset top
-    ('evt_id'    , np.uint32), #contatore eventi
-    ('trg_charge', '%du1'%T_ASIC_CHANNELS), #array 64 el, trigger in carica su ogni canale
-    ('energy'    , '%di2'%T_ASIC_CHANNELS), #energia ogni canale
-    ('coarse'    , '%di2'%T_ASIC_CHANNELS), #tempo preciso
-    ('fine'      , '%di2'%T_ASIC_CHANNELS), #divisore di clock- tempo +preciso
+    ('top'       , np.uint16), #long times counter (0-n, n-0)
+    ('global'    , np.uint32), #longer times counter, it is +1 when top resets
+    ('evt_id'    , np.uint32), #events counter
+    ('trg_charge', '%du1'%T_ASIC_CHANNELS), #array 64 elements, charge's trigger on every channel
+    ('energy'    , '%di2'%T_ASIC_CHANNELS), #channel's energy
+    ('coarse'    , '%di2'%T_ASIC_CHANNELS), #accurate time
+    ('fine'      , '%di2'%T_ASIC_CHANNELS), #clock's divisor, more accurate time
   ])
 
 T_SINGLE_EVENT = np.dtype([
     ('tx_id'     , np.uint8),
     ('asic_id'   , np.uint8),
-    ('energy'    , '%di2'%T_ASIC_CHANNELS), #energia ogni canale
-    ('timestamp' , '%di8'%T_ASIC_CHANNELS), #tempi calibrati
+    ('energy'    , '%di2'%T_ASIC_CHANNELS), #channel's energy
+    ('timestamp' , '%di8'%T_ASIC_CHANNELS), #calibrated times
   ])
 
 T_SINGLE_EVENT_TIMESTAMPED = np.dtype([
     ('tx_id'     , np.uint8),
     ('asic_id'   , np.uint8),
-    ('energy'    , '%di2'%T_ASIC_CHANNELS), #energia ogni canale
-    ('timestamp' , np.int64), #tempo calibrato
+    ('energy'    , '%di2'%T_ASIC_CHANNELS),
+    ('timestamp' , np.int64),
   ])
 
 T_SINGLE_EVENT_PIXELATED = np.dtype([
@@ -73,7 +73,7 @@ T_SINGLE_EVENT_PIXELATED = np.dtype([
     ('asic_id'   , np.uint8),
     ('pixel_id'  , np.uint8),
     ('energy'    , np.float32),
-    ('timestamp' , np.int64), #tempo calibrato
+    ('timestamp' , np.int64),
   ])
 
 @profile
@@ -311,7 +311,7 @@ def floodmap(infile, found_tx, found_ic, data0):
 
     return floodmap_array,event_x,event_y
 
-#NOTA: image sarebbe fmap_val, img_max sarebbe blobs_log e labels sarebbe lut
+#NOTA: 'image' is 'fmap_val', 'img_max' is 'blobs_log' and 'labels' is 'lut'
 @profile
 def generate_maps(fmap_val,lista_cry):
     """
@@ -626,23 +626,10 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
 
     fn = np.fromfile('temp.dat',dtype=T_SINGLE_EVENT_PIXELATED)
     fn.sort(order = 'timestamp')
-    #plt.figure()
-    #plt.title('Events in TX {} ASIC {}'.format(sel_tx,sel_ic))
-    #plt.xlabel('time [s]')
-    #occ, edges,_= plt.hist((fn['timestamp'])*(25*(10**(-9))/16384), bins=np.arange(0,20,1))
-    #print(np.arange(0,int(acquisition_time),1))
-    #plt.show()
-    #print('-------------')
-    #print('                        ',fn['timestamp'][0],'  ',fn['timestamp'][-1])
-    #print('-------------')
+
     coincidences = get_coincidences_all(fn,CW)
     coinc_diff = coincidences['timestamp'][::2]-coincidences['timestamp'][1::2]# coincidences['timestamp'][1,:] - coincidences['timestamp'][0,:]
-    #ydata_hist_temp,_ = np.histogram(coinc_diff * TDC_UNIT_NS, bins = 120)
 
-
-    #print(coincidences[0]) #sarebbe al prima colonna di eventi in coincidenza che hanno preso asic 12
-    #print('shape coinc che hanno preso 12',len(coincidences[0]), 'dsgfsd',len(coincidences[1]))
-    #print(coincidences[:,0]) #prendo la prima coincidenza
     del fn
     return coincidences, arr
 
@@ -818,7 +805,7 @@ def find_CTR(file_coincidenze,count,lista_energia):
     popt, pcov = curve_fit(f,np.linspace(-10,10,len(array_CTR))[mask], array_CTR[mask], p0=[15000,0,1])
     plt.figure()
     plt.title('CTR = ({:.3f} +/- {:.3f}) ns'.format(2.35 * popt[2], 2.35*np.sqrt(np.diag(pcov)[2])))
-    plt.xlabel('differenza temporale [ns]')
+    plt.xlabel('time differences [ns]')
     plt.plot(np.linspace(-10,10,len(array_CTR)), array_CTR)
     plt.show()
 
@@ -844,7 +831,7 @@ def plot_spectrum(array_energia,tx,asic):
         for sel_ic in asic:
             for pixel in range(0,T_ASIC_CHANNELS):
                 plt.figure()
-                plt.title('Spettro energetico TX = {}, ASIC = {}, Pixel = {}'.format(sel_tx,sel_ic,pixel))
+                plt.title('Energy spectrum TX = {}, ASIC = {}, Pixel = {}'.format(sel_tx,sel_ic,pixel))
                 plt.xlabel('energy [keV]')
                 plt.plot(x,array_energia[sel_tx,sel_ic,pixel,:])
                 plt.show()
