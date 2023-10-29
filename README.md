@@ -3,7 +3,7 @@
 CMEPDA_exam is a repository containing python programs that implement the analysis of raw data taken from acquisitions with a PET- detector. Positron emission tomography (PET) is a functional imaging technique that uses radioactive substances known as radiotracers to visualize and measure changes in metabolic processes. PET measures the two annihilation photons that are produced back-to-back after positron emission by the radiotracer. Scintillation pixelated detectors are used as detection elements. Due to the positron annihilation we expect to observe two photons at roughly the same time (in coincidence) in the detector. The final aim of this project is to obtain a file containing all the coincidence events that were detected by the acquisition passing through some steps. The project is made by two python scripts: [PET_analyser](https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/CMEPDA_exam/PET_analyser.py) and [functionbox](https://github.com/RebeccaAnzalone/CMEPDA_exam/blob/main/CMEPDA_exam/functionbox.py). The first one is used to compute the analysis using all the functions contained in 'functionbox.py'.
 
 # How to use it
-In a nutshell, you should be able to compute 'PET_analyser.py' using python. The input raw file is a .dat.dec, a data file that have been decodified to be used in the analysis. To understand all the functionalities and options of the program is useful to use the '--help' function in this way:
+In a nutshell, you should be able to compute 'PET_analyser.py' using python. The input raw file is a .dat.dec, a data file that has been decodified to be used in the analysis. To understand all the functionalities and options of the program is useful to use the '--help' function in this way:
 
 ```
 python PET_analyser.py --help
