@@ -764,7 +764,7 @@ def fit_function(spectrum, xdata):
     return risoluzione_en, u_R
 
 @profile
-def find_CTR(file_coincidenze,count,lista_energia):
+def find_CTR(file_coincidenze,count,lista_energia,CW):
     """
     This function finds the Coincidence Time Resolution of the detector.
 
@@ -776,6 +776,8 @@ def find_CTR(file_coincidenze,count,lista_energia):
             size of subfile to process
     lista_energia : list
                     energy window: list where the first element is True/False and the remains stand for [energy_min, energy_max]
+    CW : int
+         Coincidence Window
     Returns
     -------
     None : None
@@ -801,12 +803,12 @@ def find_CTR(file_coincidenze,count,lista_energia):
         if (infile.size != int(count)):
             j = -200
 
-    mask = np.logical_and(np.linspace(-10,10,len(array_CTR)) < 5, np.linspace(-10,10,len(array_CTR))> -5)
-    popt, pcov = curve_fit(f,np.linspace(-10,10,len(array_CTR))[mask], array_CTR[mask], p0=[15000,0,1])
+    mask = np.logical_and(np.linspace(-CW,CW,len(array_CTR)) <(CW/2), np.linspace(-CW,CW,len(array_CTR))> -CW/2)
+    popt, pcov = curve_fit(f,np.linspace(-CW,CW,len(array_CTR))[mask], array_CTR[mask], p0=[15000,0,1])
     plt.figure()
     plt.title('CTR = ({:.3f} +/- {:.3f}) ns'.format(2.35 * popt[2], 2.35*np.sqrt(np.diag(pcov)[2])))
     plt.xlabel('time differences [ns]')
-    plt.plot(np.linspace(-10,10,len(array_CTR)), array_CTR)
+    plt.plot(np.linspace(-CW,CW,len(array_CTR)), array_CTR)
     plt.show()
 
 @profile

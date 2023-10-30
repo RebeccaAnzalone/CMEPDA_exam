@@ -241,6 +241,6 @@ if __name__ == "__main__":
     coincidences_file,spectrum_array = main_timestamp(args.input_file,args.count_events,args.crystal_map_filename,args.pedestals_filename,args.tdc_calibration_filename, args.outfile, args.coincidences_window, args.energy_calibration, args.resolution_array)
 
     if args.coincidence_time_resolution:
-        fun.find_CTR(coincidences_file,args.count_events, args.energy_window)
+        fun.find_CTR(coincidences_file,args.count_events, args.energy_window, args.coincidences_window)
     if args.plot_pixel_spectra[0]:
         fun.plot_spectrum(spectrum_array, args.plot_pixel_spectra[1],args.plot_pixel_spectra[2])
