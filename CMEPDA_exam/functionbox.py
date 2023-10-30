@@ -44,7 +44,7 @@ N_BINS_CTR = 120
 T_ASIC_TEMP_EVENT = np.dtype([
     ('tx_id'     , np.uint8),
     ('asic_id'   , np.uint8),
-    ('extra_bit' , np.uint8), #dice se top cresce o decresce
+    ('extra_bit' , np.uint8), #indicates if the top time is increasing or decresing
     ('top'       , np.uint16), #long times counter (0-n, n-0)
     ('global'    , np.uint32), #longer times counter, it is +1 when top resets
     ('evt_id'    , np.uint32), #events counter
@@ -311,7 +311,7 @@ def floodmap(infile, found_tx, found_ic, data0):
 
     return floodmap_array,event_x,event_y
 
-#NOTA: 'image' is 'fmap_val', 'img_max' is 'blobs_log' and 'labels' is 'lut'
+#NOTE: 'image' is 'fmap_val', 'img_max' is 'blobs_log' and 'labels' is 'lut'
 @profile
 def generate_maps(fmap_val,lista_cry):
     """
@@ -628,7 +628,7 @@ def compute_events(infile,found_tx,found_ic,pedestal,tdc_calibration,crystals,CW
     fn.sort(order = 'timestamp')
 
     coincidences = get_coincidences_all(fn,CW)
-    coinc_diff = coincidences['timestamp'][::2]-coincidences['timestamp'][1::2]# coincidences['timestamp'][1,:] - coincidences['timestamp'][0,:]
+    coinc_diff = coincidences['timestamp'][::2]-coincidences['timestamp'][1::2]
 
     del fn
     return coincidences, arr
